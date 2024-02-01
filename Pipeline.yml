@@ -1,0 +1,43 @@
+# Build your Android project with Gradle.
+# Add steps that test, sign, and distribute the APK, save build artifacts, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/android
+
+trigger:
+  batch: true
+  # branches:
+  #   include:
+  #     - develop
+  #     - develop_tests_espresso
+  tags:
+    include:
+      - '*'
+
+pool:
+  name: <poolName>
+  
+steps:
+- checkout: self
+  clean: true
+  persistCredentials: true
+- task: Gradle@2
+  inputs:
+    workingDirectory: ''
+    gradleWrapperFile: 'gradlew'
+    gradleOptions: '-Xmx1024m'
+    publishJUnitResults: false
+    #testResultsFiles: '**/TEST-*.xml'
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: 'default'
+    tasks: 'assembleDebug'
+  
+- task: CopyFiles@2
+  displayName: Cria artefato com APK.
+  inputs:
+    sourceFolder: '$(system.defaultworkingdirectory)'
+    contents: '**/*.apk'
+    targetFolder: '$(build.artifactStagingDirectory)'
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: AppName.Artifact'
+  inputs:
+    pathToPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: AppName.Artifact
