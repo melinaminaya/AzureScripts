@@ -1,4 +1,4 @@
-#Creation of a subsuite in a TestPlan.
+#Creation of a subsuite in a TestPlan with a Powershell Script.
 #DocumentationReference: https://learn.microsoft.com/en-us/rest/api/azure/devops/testplan/test-suites/create?view=azure-devops-rest-5.0&tabs=HTTP
 
 $organization = "<organization_url_path>"
