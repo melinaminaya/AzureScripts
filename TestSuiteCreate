@@ -1,0 +1,42 @@
+#This is a Powershell script to request a creation of a TestSuite using the azure RestApi. 
+#All the documentation of Azure, you can find here:https://learn.microsoft.com/en-us/rest/api/azure/devops/test/test-suites/create?view=azure-devops-rest-5.0&tabs=HTTP
+#The only way that worked for me was with 5.0 version with a Basic Auth using my personal PAT, not a System.AccessToken.
+
+$organization = "<your_organization_URL>"
+$PAT = "$env:PAT"
+$project = "<project_name>"
+$planId = "251518"
+$suiteId = "251520"
+$cloneTo = "MyAppName - $(Release.ReleaseId)"
+
+$authorization = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(":$PAT"))
+$headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+$headers.Add("Accept-Charset", 'UTF-8')
+$headers.Add('Content-Type','Application/Json')
+$headers.Add('Authorization',"Basic$authorization")
+
+$postParams=@"
+{
+  "suiteType": "staticTestSuite",
+  "name": "$cloneTo",
+ "parentSuite": {
+    "id": "251519"
+  },
+  "inheritDefaultConfigurations": true
+}
+"@
+
+$apiUrl = "$organization/$project/_apis/testplan/Plans/$planId/suites?api-version=5.0-preview.1"
+Write-Host "APIURL: $apiUrl"
+
+$response = Invoke-WebRequest -Uri $apiUrl -Method POST -Headers $headers -Body $postParams
+
+if ($response.PSObject.Properties["statusCode"].Value -eq 200) {
+    # Extract and display the ID from the response body
+    $jsonObject = $response | ConvertFrom-Json
+    $id = $jsonObject.id -as [int]
+    Write-Host "Test suite created successfully. ID: $id"
+    Write-Host "##vso[task.setvariable variable=NewTestSuiteId]$id"
+} else {
+    Write-Host "Error creating test suite. Response: $($response | ConvertTo-Json -Depth 5)"
+}
