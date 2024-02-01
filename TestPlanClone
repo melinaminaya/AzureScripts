@@ -1,0 +1,45 @@
+#Cloning a TestPlan in Azure via RestApi using a Powershell Script.
+#Documentation Reference: https://learn.microsoft.com/en-us/rest/api/azure/devops/testplan/test-plan-clone/clone-test-plan?view=azure-devops-rest-5.0
+#Use Preview2 of version 5.0 to work.
+#Do not forget to set your PAT as an Environment Variable inside the Task.
+
+$organization = "<organization_url_path>"
+$PAT = "$env:PAT"
+$project = "<project_name>"
+$planId = "251518"
+$suiteId = "251520"
+$cloneTo = "AppName - $(Release.ReleaseId)"
+
+$authorization = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(":$PAT"))
+$headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+$headers.Add("Accept-Charset", 'UTF-8')
+$headers.Add('Content-Type','Application/Json')
+$headers.Add('Authorization',"Basic$authorization")
+
+$postParams=@"
+{
+  "destinationTestPlan": {
+    "name": "$cloneTo",
+    "Project": {
+      "Name": "$project"
+    }
+  },
+  "options": {
+    "copyAncestorHierarchy": true,
+    "copyAllSuites": true
+  },
+  "suiteIds": [  
+	$suiteId
+  ]
+}
+"@
+
+$apiUrl = "$organization/$project/_apis/test/Plans/$planId/cloneoperation?api-version=5.0-preview.2"
+$response = Invoke-WebRequest -Uri $apiUrl -Method POST -Headers $headers -Body $postParams 
+if ($response.PSObject.Properties["statusCode"].Value -eq 200) {
+    # Extract and display the ID from the response body
+    $jsonObject = $response | ConvertFrom-Json
+    Write-Host "Test Plan cloned successfully."
+} else {
+    Write-Host "Error cloning Test Plan. Response: $($response | ConvertTo-Json -Depth 5)"
+}
