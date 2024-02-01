@@ -1,0 +1,39 @@
+#Creation of a subsuite in a TestPlan.
+#DocumentationReference: https://learn.microsoft.com/en-us/rest/api/azure/devops/testplan/test-suites/create?view=azure-devops-rest-5.0&tabs=HTTP
+
+$organization = "<organization_url_path>"
+$PAT = "$env:PAT"
+$project = "<project_name>"
+$planId = "251518"
+$suiteId = "251520"
+$cloneTo = "AppName - $(Release.ReleaseId)"
+
+$authorization = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(":$PAT"))
+$headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+$headers.Add("Accept-Charset", 'UTF-8')
+$headers.Add('Content-Type','Application/Json')
+$headers.Add('Authorization',"Basic$authorization")
+
+$postParams=@"
+{
+  "suiteType": "staticTestSuite",
+  "name": "SubSuite 1.1.1",
+  "parentSuite": {
+    "id": $suiteId
+  },
+  "inheritDefaultConfigurations": false,
+  "defaultConfigurations": [
+    {
+      "id": 1
+    },
+    {
+      "id": 2
+    }
+  ]
+}
+"@
+
+$apiUrl = "$organization/$project/_apis/testplan/Plans/$planId/suites?api-version=5.0-preview.1"
+Write-Host "APIURL: $apiUrl"
+#Invoking the status of the response using Select-Object -Expand StatusDescription, else receive response
+Invoke-WebRequest -Uri $apiUrl -Method POST -Headers $headers -Body $postParams | Select-Object -Expand StatusDescription
